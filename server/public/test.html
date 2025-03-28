@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div id="status">Connecting...</div>
+    <div class="controls">
+        <button onclick="joinRoom()">Join Room</button>
+        <button onclick="sendPerformanceUpdate()">Send Performance Update</button>
+        <button onclick="sendCategoryUpdate()">Send Category Update</button>
+        <button onclick="sendNewMediaOutlet()">Send New Media Outlet</button>
+        <button onclick="sendStatusUpdate()">Send Status Update</button>
+        <button onclick="sendLeaderboardUpdate()">Send Leaderboard Update</button>
+    </div>
+    <div id="log" class="log"></div>
+
+    <script>
+        const socket = io();
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+
+        function appendLog(message) {
+            const div = document.createElement('div');
+            div.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        socket.on('connect', () => {
+            status.textContent = 'Connected';
+            appendLog('Connected to WebSocket server');
+        });
+
+        socket.on('disconnect', () => {
+            status.textContent = 'Disconnected';
+            appendLog('Disconnected from WebSocket server');
+        });
+
+        socket.on('connect_error', (error) => {
+            status.textContent = 'Connection Error';
+            appendLog(`Connection error: ${error.message}`);
+        });
+
+        socket.on('performance-update', (data) => {
+            appendLog(`Received performance update: ${JSON.stringify(data)}`);
+        });
+
+        socket.on('new-media-outlet', (data) => {
+            appendLog(`Received new media outlet: ${JSON.stringify(data)}`);
+        });
+
+        socket.on('category-update', (data) => {
+            appendLog(`Received category update: ${JSON.stringify(data)}`);
+        });
+
+        socket.on('status-update', (data) => {
+            appendLog(`Received status update: ${JSON.stringify(data)}`);
+        });
+
+        socket.on('leaderboard-update', (data) => {
+            appendLog(`Received leaderboard update: ${JSON.stringify(data)}`);
+        });
+
+        function joinRoom() {
+            const mediaOutletId = 'test-media-outlet-id';
+            socket.emit('join-media-room', mediaOutletId);
+            appendLog(`Joined room for media outlet: ${mediaOutletId}`);
+        }
+
+        function sendPerformanceUpdate() {
+            const data = {
+                mediaOutletId: 'test-media-outlet-id',
+                data: {
+                    metrics: {
+                        reach: 1000,
+                        engagement: 0.8,
+                        influence: 0.9
+                    },
+                    ranking: {
+                        categoryRank: 1,
+                        overallRank: 5
+                    }
+                }
+            };
+            socket.emit('performance-update', data);
+            appendLog(`Sent performance update: ${JSON.stringify(data)}`);
+        }
+
+        function sendCategoryUpdate() {
+            const data = {
+                categoryId: 'test-category-id',
+                data: {
+                    name: 'Updated Category',
+                    description: 'Updated description'
+                }
+            };
+            socket.emit('category-update', data);
+            appendLog(`Sent category update: ${JSON.stringify(data)}`);
+        }
+
+        function sendNewMediaOutlet() {
+            const data = {
+                mediaOutletId: 'new-media-outlet-id',
+                data: {
+                    name: 'New Media Outlet',
+                    category: 'News'
+                }
+            };
+            socket.emit('new-media-outlet', data);
+            appendLog(`Sent new media outlet: ${JSON.stringify(data)}`);
+        }
+
+        function sendStatusUpdate() {
+            const data = {
+                mediaOutletId: 'test-media-outlet-id',
+                data: {
+                    status: 'active',
+                    lastUpdated: new Date()
+                }
+            };
+            socket.emit('status-update', data);
+            appendLog(`Sent status update: ${JSON.stringify(data)}`);
+        }
+
+        function sendLeaderboardUpdate() {
+            const data = {
+                data: {
+                    rankings: [
+                        { mediaOutletId: 'outlet-1', rank: 1 },
+                        { mediaOutletId: 'outlet-2', rank: 2 }
+                    ]
+                }
+            };
+            socket.emit('leaderboard-update', data);
+            appendLog(`Sent leaderboard update: ${JSON.stringify(data)}`);
+        }
+    </script>
+</body>
+</html> 
