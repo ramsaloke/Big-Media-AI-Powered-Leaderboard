@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import Header from '../components/Layout/Header';
-import Footer from '../components/Layout/Footer';
+
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -43,7 +42,7 @@ ${formData.message}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Header />
+      
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -171,7 +170,7 @@ ${formData.message}
           </div>
         </div>
       </main>
-      <Footer />
+     
     </div>
   );
 };

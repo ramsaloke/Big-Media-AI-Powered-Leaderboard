@@ -1,14 +1,14 @@
 import { Server } from 'socket.io';
-import MediaOutlet from '../models/MediaOutlet.js';
+import MediaOutlets from '../models/MediaOutlets.js';
 import Category from '../models/Category.js';
 
 let io;
 
-export const initializeSocket = (server) => {
-  io = new Server(server, {
+export const initializeSocket = (httpServer) => {
+  io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || "http://localhost:5173",
-      methods: ["GET", "POST"]
+      origin: 'http://localhost:5175',
+      methods: ['GET', 'POST']
     }
   });
 
@@ -19,10 +19,12 @@ export const initializeSocket = (server) => {
     // Join specific rooms for real-time updates
     socket.on('join-media-outlet', (mediaOutletId) => {
       socket.join(`media-outlet-${mediaOutletId}`);
+      console.log(`Client ${socket.id} joined media outlet ${mediaOutletId}`);
     });
 
-    socket.on('join-category', (categoryId) => {
-      socket.join(`category-${categoryId}`);
+    socket.on('leave-media-outlet', (mediaOutletId) => {
+      socket.leave(`media-outlet-${mediaOutletId}`);
+      console.log(`Client ${socket.id} left media outlet ${mediaOutletId}`);
     });
 
     socket.on('disconnect', () => {
@@ -35,20 +37,20 @@ export const initializeSocket = (server) => {
 
 // Event emitters for different types of updates
 export const emitPerformanceUpdate = (mediaOutletId, data) => {
-  if (io) {
-    io.to(`media-outlet-${mediaOutletId}`).emit('performance-update', data);
-    io.emit('leaderboard-update', { mediaOutletId, ...data });
-  }
+  if (!io) return;
+  
+  io.to(`media-outlet-${mediaOutletId}`).emit('performance-update', data);
+  io.emit('leaderboard-update', { mediaOutletId, ...data });
 };
 
 export const emitNewMediaOutlet = (mediaOutlet) => {
-  if (io) {
-    io.emit('new-media-outlet', mediaOutlet);
-    io.to(`category-${mediaOutlet.category}`).emit('category-update', {
-      type: 'new-outlet',
-      mediaOutlet
-    });
-  }
+  if (!io) return;
+  
+  io.emit('new-media-outlet', mediaOutlet);
+  io.to(`category-${mediaOutlet.category}`).emit('category-update', {
+    category: mediaOutlet.category,
+    mediaOutlet
+  });
 };
 
 export const emitCategoryUpdate = (categoryId, update) => {
@@ -58,8 +60,8 @@ export const emitCategoryUpdate = (categoryId, update) => {
 };
 
 export const emitStatusUpdate = (mediaOutletId, status) => {
-  if (io) {
-    io.to(`media-outlet-${mediaOutletId}`).emit('status-update', status);
-    io.emit('leaderboard-update', { mediaOutletId, status });
-  }
+  if (!io) return;
+  
+  io.to(`media-outlet-${mediaOutletId}`).emit('status-update', status);
+  io.emit('leaderboard-update', { mediaOutletId, status });
 }; 

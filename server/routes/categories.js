@@ -1,38 +1,42 @@
 import express from 'express';
+import MediaOutlets from '../models/MediaOutlets.js';
 import Category from '../models/Category.js';
-import MediaOutlet from '../models/MediaOutlet.js';
 
 const router = express.Router();
 
 // Get all categories
 router.get('/', async (req, res) => {
   try {
-    const { status } = req.query;
-    let query = {};
-
-    // Filter by status if provided
-    if (status) {
-      query.status = status;
-    }
-
-    const categories = await Category.find(query);
+    const categories = await Category.find();
     res.json(categories);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ message: 'Error fetching categories' });
   }
 });
 
 // Get media outlets by category
 router.get('/:categoryId/media-outlets', async (req, res) => {
   try {
-    const mediaOutlets = await MediaOutlet.find({ 
-      category: req.params.categoryId,
-      status: 'active'
-    }).populate('category', 'name icon');
-
+    const mediaOutlets = await MediaOutlets.find({ category: req.params.categoryId });
     res.json(mediaOutlets);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching media outlets by category:', error);
+    res.status(500).json({ message: 'Error fetching media outlets by category' });
+  }
+});
+
+// Get category by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    res.json(category);
+  } catch (error) {
+    console.error('Error fetching category:', error);
+    res.status(500).json({ message: 'Error fetching category' });
   }
 });
 

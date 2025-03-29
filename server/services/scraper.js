@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
-import cheerio from 'cheerio';
-import MediaOutlet from '../models/MediaOutlet.js';
+import * as cheerio from 'cheerio';
+import MediaOutlets from '../models/MediaOutlets.js';
 
 class ScraperService {
   constructor() {
@@ -31,6 +31,7 @@ class ScraperService {
         shares: '.share-stats'
       }
     };
+    this.baseUrl = process.env.SCRAPER_API_URL || 'http://localhost:3000';
   }
 
   async initialize() {
@@ -46,19 +47,63 @@ class ScraperService {
     }
   }
 
-  getWebsiteRules(url) {
-    const domain = new URL(url).hostname;
+  getWebsiteRules(website) {
+    const domain = new URL(website).hostname;
     return this.websiteRules[domain] || this.websiteRules.default;
   }
 
-  async scrapeMediaOutlet(url) {
+  // Enhanced ranking algorithm
+  calculateRanking(metrics, contentMetrics) {
+    // Weight factors for different metrics
+    const weights = {
+      engagement: 0.3,
+      reach: 0.2,
+      influence: 0.2,
+      articles: 0.15,
+      views: 0.1,
+      shares: 0.05
+    };
+
+    // Normalize metrics to a 0-100 scale
+    const normalizedMetrics = {
+      engagement: this.normalizeMetric(metrics.engagement, 0, 100),
+      reach: this.normalizeMetric(metrics.reach, 0, 1000000),
+      influence: this.normalizeMetric(metrics.influence, 0, 100),
+      articles: this.normalizeMetric(contentMetrics.articles, 0, 1000),
+      views: this.normalizeMetric(contentMetrics.views, 0, 100000),
+      shares: this.normalizeMetric(contentMetrics.shares, 0, 10000)
+    };
+
+    // Calculate weighted score
+    const score = Object.entries(weights).reduce((total, [metric, weight]) => {
+      return total + (normalizedMetrics[metric] * weight);
+    }, 0);
+
+    // Calculate category rank based on engagement and influence
+    const categoryScore = (normalizedMetrics.engagement * 0.6) + (normalizedMetrics.influence * 0.4);
+
+    return {
+      overallScore: score,
+      categoryScore: categoryScore,
+      metrics: normalizedMetrics
+    };
+  }
+
+  normalizeMetric(value, min, max) {
+    if (value <= min) return 0;
+    if (value >= max) return 100;
+    return ((value - min) / (max - min)) * 100;
+  }
+
+  // Update the scrapeMediaOutlet method to use the new ranking algorithm
+  async scrapeMediaOutlet(website) {
     try {
       const page = await this.browser.newPage();
-      await page.goto(url, { waitUntil: 'networkidle0' });
+      await page.goto(website, { waitUntil: 'networkidle0' });
       
       const content = await page.content();
       const $ = cheerio.load(content);
-      const rules = this.getWebsiteRules(url);
+      const rules = this.getWebsiteRules(website);
 
       // Extract social media metrics
       const metrics = {
@@ -74,11 +119,11 @@ class ScraperService {
         shares: this.extractShares($, rules)
       };
 
-      // Extract ranking data
-      const ranking = {
-        categoryRank: this.extractCategoryRank($, rules),
-        overallRank: this.extractOverallRank($, rules)
-      };
+      // Calculate influence score based on engagement and reach
+      metrics.influence = (metrics.engagement * 0.7) + (metrics.reach * 0.3);
+
+      // Calculate ranking using the enhanced algorithm
+      const ranking = this.calculateRanking(metrics, contentMetrics);
 
       await page.close();
 
@@ -89,7 +134,7 @@ class ScraperService {
         lastScraped: new Date()
       };
     } catch (error) {
-      console.error(`Error scraping ${url}:`, error);
+      console.error(`Error scraping ${website}:`, error);
       throw error;
     }
   }
@@ -131,18 +176,6 @@ class ScraperService {
     return this.parseNumber(text);
   }
 
-  extractCategoryRank($, rules) {
-    const selector = rules.categoryRank;
-    const text = $(selector).text();
-    return this.parseNumber(text);
-  }
-
-  extractOverallRank($, rules) {
-    const selector = rules.overallRank;
-    const text = $(selector).text();
-    return this.parseNumber(text);
-  }
-
   parseNumber(text) {
     if (!text) return 0;
     // Remove commas and any non-numeric characters except decimal point
@@ -153,14 +186,13 @@ class ScraperService {
   // Method to update media outlet data
   async updateMediaOutletData(mediaOutletId) {
     try {
-      const mediaOutlet = await MediaOutlet.findById(mediaOutletId);
+      const mediaOutlet = await MediaOutlets.findById(mediaOutletId);
       if (!mediaOutlet) {
         throw new Error('Media outlet not found');
       }
 
-      const scrapedData = await this.scrapeMediaOutlet(mediaOutlet.url);
+      const scrapedData = await this.scrapeMediaOutlet(mediaOutlet.website);
 
-      // Update media outlet with scraped data
       mediaOutlet.performanceMetrics = {
         ...mediaOutlet.performanceMetrics,
         ...scrapedData.metrics,
@@ -174,8 +206,8 @@ class ScraperService {
       };
 
       mediaOutlet.ranking = {
-        ...mediaOutlet.ranking,
-        ...scrapedData.ranking,
+        overallScore: scrapedData.ranking.overallScore,
+        categoryScore: scrapedData.ranking.categoryScore,
         lastUpdated: new Date()
       };
 
@@ -188,11 +220,24 @@ class ScraperService {
     }
   }
 
+  async updateAllMediaOutlets() {
+    try {
+      const mediaOutlets = await MediaOutlets.find({});
+      for (const outlet of mediaOutlets) {
+        await this.updateMediaOutletData(outlet._id);
+      }
+      return { message: 'All media outlets updated successfully' };
+    } catch (error) {
+      console.error('Error updating all media outlets:', error);
+      throw error;
+    }
+  }
+
   // Method to schedule regular updates
   async scheduleUpdates(interval = 24 * 60 * 60 * 1000) { // Default: 24 hours
     setInterval(async () => {
       try {
-        const mediaOutlets = await MediaOutlet.find({});
+        const mediaOutlets = await MediaOutlets.find({});
         for (const outlet of mediaOutlets) {
           await this.updateMediaOutletData(outlet._id);
         }
@@ -203,4 +248,4 @@ class ScraperService {
   }
 }
 
-export const scraperService = new ScraperService(); 
+export default new ScraperService(); 

@@ -1,74 +1,102 @@
-import { useState } from 'react';
-import Header from '../components/Layout/Header';
-import Footer from '../components/Layout/Footer';
-import SearchBar from '../components/Leaderboard/SearchBar';
+import React, { useState } from 'react';
+import { apiService } from '../services/api';
 import MediaCard from '../components/Leaderboard/MediaCard';
 import Loading from '../components/common/Loading';
-import ErrorBoundary from '../components/common/ErrorBoundary';
 
 const Search = () => {
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState({
+    category: 'all',
+    sortBy: 'relevance',
+    timeRange: 'all'
+  });
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSearch = async (query) => {
-    if (!query.trim()) {
-      setSearchResults([]);
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      setResults([]);
       return;
     }
 
     setLoading(true);
-    // TODO: Replace with actual API call
+    setError(null);
     try {
-      // Simulated API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockResults = [
-        {
-          name: "Forbes",
-          category: "Business",
-          views: 1500000,
-          shares: 25000,
-          articles: [
-            { title: `Article about ${query}`, views: 500000, shares: 8000 }
-          ]
-        }
-      ];
-      setSearchResults(mockResults);
+      const results = await apiService.searchMediaOutlets(searchQuery);
+      setResults(results);
     } catch (error) {
       console.error('Search error:', error);
-      setSearchResults([]);
+      setError('Failed to fetch search results. Please try again.');
+      setResults([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow bg-gray-50">
-        <ErrorBoundary>
-          <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Search Media</h1>
-            <div className="max-w-2xl mx-auto">
-              <SearchBar onSearch={handleSearch} />
-              {loading ? (
-                <Loading />
-              ) : (
-                <div className="space-y-6">
-                  {searchResults.map((media, index) => (
-                    <MediaCard key={index} media={media} />
-                  ))}
-                  {searchResults.length === 0 && (
-                    <p className="text-center text-gray-600">
-                      No results found. Try a different search term.
-                    </p>
-                  )}
+    <div className="w-full py-8">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl font-bold text-gray-900 mb-8">Search Media Outlets</h1>
+          
+          {/* Search Form */}
+          <form onSubmit={handleSearch} className="mb-8">
+            <div className="flex gap-4">
+              <div className="flex-grow relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name, category, or keyword..."
+                  className="w-full px-6 py-4 bg-white rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 placeholder-gray-400 shadow-sm hover:shadow-md transition-all duration-300 pr-12"
+                />
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </div>
-              )}
+              </div>
+              <button
+                type="submit"
+                className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+              >
+                Search
+              </button>
             </div>
+          </form>
+
+          {/* Search Results */}
+          <div className="space-y-6">
+            {loading ? (
+              <Loading />
+            ) : error ? (
+              <div className="text-center text-red-500 bg-red-50 p-4 rounded-lg">
+                {error}
+              </div>
+            ) : results.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-lg">
+                  Enter a search term to find media outlets
+                </p>
+              </div>
+            ) : (
+              results.map((result) => (
+                <MediaCard key={result.id} media={result} />
+              ))
+            )}
           </div>
-        </ErrorBoundary>
-      </main>
-      <Footer />
+        </div>
+      </div>
     </div>
   );
 };

@@ -8,6 +8,7 @@ import mediaOutletsRoutes from './routes/mediaOutlets.js';
 import categoriesRoutes from './routes/categories.js';
 import performanceRoutes from './routes/performance.js';
 import scraperRoutes from './routes/scraper.js';
+import metricsRoutes from './routes/metrics.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -23,7 +24,12 @@ const __dirname = path.dirname(__filename);
 initializeSocket(httpServer);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5175'], // Frontend URLs
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Serve static files
@@ -37,6 +43,7 @@ app.use('/api/media-outlets', mediaOutletsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/performance', performanceRoutes);
 app.use('/api/scraper', scraperRoutes);
+app.use('/api/metrics', metricsRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -49,9 +56,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
-
-// Use httpServer.listen instead of app.listen
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

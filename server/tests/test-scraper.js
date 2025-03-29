@@ -1,5 +1,6 @@
 import { scraperService } from '../services/scraper.js';
 import MediaOutlet from '../models/MediaOutlet.js';
+import Category from '../models/Category.js';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -15,29 +16,29 @@ async function testScraper() {
     await scraperService.initialize();
     console.log('Scraper initialized');
 
+    // Get or create test category
+    let category = await Category.findOne({ name: 'Technology' });
+    if (!category) {
+      category = await Category.create({
+        name: 'Technology',
+        description: 'Technology news and media'
+      });
+    }
+
     // Create a test media outlet
     const testOutlet = new MediaOutlet({
       name: 'TechCrunch',
       description: 'Technology news and analysis',
-      category: 'Technology',
-      url: 'https://techcrunch.com',
+      category: category._id,
+      website: 'https://techcrunch.com',
+      logo: 'https://techcrunch.com/wp-content/uploads/2020/07/TechCrunch_logo.png',
       performanceMetrics: {
-        followers: 0,
         engagement: 0,
         reach: 0,
+        influence: 0,
         lastUpdated: new Date()
       },
-      contentMetrics: {
-        articles: 0,
-        views: 0,
-        shares: 0,
-        lastUpdated: new Date()
-      },
-      ranking: {
-        categoryRank: 0,
-        overallRank: 0,
-        lastUpdated: new Date()
-      }
+      status: 'active'
     });
 
     await testOutlet.save();
@@ -45,7 +46,7 @@ async function testScraper() {
 
     // Test scraping
     console.log('Starting scraping test...');
-    const scrapedData = await scraperService.scrapeMediaOutlet(testOutlet.url);
+    const scrapedData = await scraperService.scrapeMediaOutlet(testOutlet.website);
     console.log('Scraped data:', scrapedData);
 
     // Test updating media outlet
@@ -68,6 +69,7 @@ async function testScraper() {
 
   } catch (error) {
     console.error('Test failed:', error);
+    await scraperService.close();
     await mongoose.connection.close();
     process.exit(1);
   }

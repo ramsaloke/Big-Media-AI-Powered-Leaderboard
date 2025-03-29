@@ -1,7 +1,5 @@
 import express from 'express';
-import MediaOutlet from '../models/MediaOutlet.js';
-import HistoricalData from '../models/HistoricalData.js';
-import Analytics from '../models/Analytics.js';
+import MediaOutlets from '../models/MediaOutlets.js';
 import { emitPerformanceUpdate } from '../services/socket.js';
 
 const router = express.Router();
@@ -9,60 +7,41 @@ const router = express.Router();
 // Get performance metrics for a media outlet
 router.get('/:mediaOutletId/metrics', async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
     const query = { mediaOutlet: req.params.mediaOutletId };
+    const metrics = await MediaOutlets.find(query)
+      .select('performanceMetrics contentMetrics ranking')
+      .sort({ 'performanceMetrics.lastUpdated': -1 });
 
-    // Add date range if provided
-    if (startDate && endDate) {
-      query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
-
-    const historicalData = await HistoricalData.find(query)
-      .sort({ date: -1 })
-      .limit(30); // Get last 30 days by default
-
-    res.json(historicalData);
+    res.json(metrics);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching metrics:', error);
+    res.status(500).json({ message: 'Error fetching metrics' });
   }
 });
 
-// Get analytics data for a media outlet
+// Get analytics for a media outlet
 router.get('/:mediaOutletId/analytics', async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
     const query = { mediaOutlet: req.params.mediaOutletId };
-
-    // Add date range if provided
-    if (startDate && endDate) {
-      query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
-
-    const analytics = await Analytics.find(query)
-      .sort({ date: -1 })
-      .limit(30); // Get last 30 days by default
+    const analytics = await MediaOutlets.find(query)
+      .select('contentMetrics performanceMetrics')
+      .sort({ 'contentMetrics.articles.publishedAt': -1 });
 
     res.json(analytics);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching analytics:', error);
+    res.status(500).json({ message: 'Error fetching analytics' });
   }
 });
 
 // Update performance metrics for a media outlet
 router.post('/:mediaOutletId/metrics', async (req, res) => {
   try {
-    const mediaOutlet = await MediaOutlet.findById(req.params.mediaOutletId);
+    const mediaOutlet = await MediaOutlets.findById(req.params.mediaOutletId);
     if (!mediaOutlet) {
       return res.status(404).json({ message: 'Media outlet not found' });
     }
 
-    // Update current metrics
     mediaOutlet.performanceMetrics = {
       ...mediaOutlet.performanceMetrics,
       ...req.body,
@@ -71,78 +50,37 @@ router.post('/:mediaOutletId/metrics', async (req, res) => {
 
     await mediaOutlet.save();
 
-    // Create historical data entry
-    const historicalData = new HistoricalData({
-      mediaOutlet: mediaOutlet._id,
-      metrics: req.body,
-      ranking: {
-        categoryRank: req.body.categoryRank,
-        overallRank: req.body.overallRank
-      }
-    });
-
-    await historicalData.save();
-
-    // Emit real-time update
+    // Emit update through socket
     emitPerformanceUpdate(mediaOutlet._id, {
-      metrics: req.body,
-      ranking: historicalData.ranking,
-      timestamp: new Date()
+      performanceMetrics: mediaOutlet.performanceMetrics,
+      ranking: mediaOutlet.ranking
     });
 
-    res.status(201).json(historicalData);
+    res.json(mediaOutlet);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error updating metrics:', error);
+    res.status(500).json({ message: 'Error updating metrics' });
   }
 });
 
-// Update analytics data for a media outlet
+// Update analytics for a media outlet
 router.post('/:mediaOutletId/analytics', async (req, res) => {
   try {
-    const mediaOutlet = await MediaOutlet.findById(req.params.mediaOutletId);
+    const mediaOutlet = await MediaOutlets.findById(req.params.mediaOutletId);
     if (!mediaOutlet) {
       return res.status(404).json({ message: 'Media outlet not found' });
     }
 
-    const analytics = new Analytics({
-      mediaOutlet: mediaOutlet._id,
+    mediaOutlet.contentMetrics = {
+      ...mediaOutlet.contentMetrics,
       ...req.body
-    });
+    };
 
-    await analytics.save();
-
-    // Emit real-time update for analytics
-    emitPerformanceUpdate(mediaOutlet._id, {
-      analytics: req.body,
-      timestamp: new Date()
-    });
-
-    res.status(201).json(analytics);
+    await mediaOutlet.save();
+    res.json(mediaOutlet);
   } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Get ranking data
-router.get('/rankings', async (req, res) => {
-  try {
-    const { category } = req.query;
-    let query = {};
-
-    if (category) {
-      query['ranking.categoryRank'] = { $exists: true };
-    } else {
-      query['ranking.overallRank'] = { $exists: true };
-    }
-
-    const rankings = await HistoricalData.find(query)
-      .populate('mediaOutlet', 'name category')
-      .sort(category ? { 'ranking.categoryRank': 1 } : { 'ranking.overallRank': 1 })
-      .limit(100);
-
-    res.json(rankings);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error updating analytics:', error);
+    res.status(500).json({ message: 'Error updating analytics' });
   }
 });
 

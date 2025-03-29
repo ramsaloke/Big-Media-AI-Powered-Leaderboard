@@ -5,6 +5,7 @@ const SOCKET_URL = 'http://localhost:5000'; // Update with your backend URL
 class SocketService {
   constructor() {
     this.socket = null;
+    this.mediaUpdateCallbacks = new Set();
   }
 
   connect() {
@@ -21,6 +22,10 @@ class SocketService {
     this.socket.on('error', (error) => {
       console.error('WebSocket error:', error);
     });
+
+    this.socket.on('mediaUpdate', (data) => {
+      this.mediaUpdateCallbacks.forEach(callback => callback(data));
+    });
   }
 
   disconnect() {
@@ -32,17 +37,13 @@ class SocketService {
 
   // Subscribe to media updates
   subscribeToMediaUpdates(callback) {
-    if (this.socket) {
-      this.socket.on('mediaUpdate', callback);
-    }
+    this.mediaUpdateCallbacks.add(callback);
   }
 
   // Unsubscribe from media updates
-  unsubscribeFromMediaUpdates() {
-    if (this.socket) {
-      this.socket.off('mediaUpdate');
-    }
+  unsubscribeFromMediaUpdates(callback) {
+    this.mediaUpdateCallbacks.delete(callback);
   }
 }
 
-export default new SocketService(); 
+export const socketService = new SocketService(); 

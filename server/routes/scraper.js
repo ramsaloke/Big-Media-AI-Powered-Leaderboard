@@ -1,6 +1,6 @@
 import express from 'express';
-import { scraperService } from '../services/scraper.js';
-import MediaOutlet from '../models/MediaOutlet.js';
+import MediaOutlets from '../models/MediaOutlets.js';
+import scraperService from '../services/scraper.js';
 
 const router = express.Router();
 
@@ -15,37 +15,25 @@ router.post('/initialize', async (req, res) => {
   }
 });
 
-// Scrape specific media outlet
+// Scrape a single media outlet
 router.post('/scrape/:mediaOutletId', async (req, res) => {
   try {
     const mediaOutlet = await scraperService.updateMediaOutletData(req.params.mediaOutletId);
     res.json(mediaOutlet);
   } catch (error) {
     console.error('Error scraping media outlet:', error);
-    res.status(500).json({ message: 'Failed to scrape media outlet', error: error.message });
+    res.status(500).json({ message: 'Error scraping media outlet' });
   }
 });
 
 // Scrape all media outlets
 router.post('/scrape-all', async (req, res) => {
   try {
-    const mediaOutlets = await MediaOutlet.find({});
-    const results = [];
-
-    for (const outlet of mediaOutlets) {
-      try {
-        const updatedOutlet = await scraperService.updateMediaOutletData(outlet._id);
-        results.push(updatedOutlet);
-      } catch (error) {
-        console.error(`Error scraping ${outlet.name}:`, error);
-        results.push({ outlet: outlet.name, error: error.message });
-      }
-    }
-
-    res.json(results);
+    const result = await scraperService.updateAllMediaOutlets();
+    res.json(result);
   } catch (error) {
-    console.error('Error in bulk scraping:', error);
-    res.status(500).json({ message: 'Failed to scrape all media outlets', error: error.message });
+    console.error('Error scraping all media outlets:', error);
+    res.status(500).json({ message: 'Error scraping all media outlets' });
   }
 });
 

@@ -1,63 +1,125 @@
-import Header from '../components/Layout/Header';
-import Footer from '../components/Layout/Footer';
+import React from 'react';
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">About Media Leaderboard</h1>
-          
-          <div className="space-y-6 text-gray-600">
-            <section>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Our Mission</h2>
-              <p>
-                Media Leaderboard is dedicated to providing real-time insights into media performance
-                and engagement metrics. We help businesses, PR firms, and readers understand which
-                media outlets are truly leading conversations and driving impact.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">What We Track</h2>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Real-time views and engagement metrics</li>
-                <li>Social media shares and interactions</li>
-                <li>Article performance across major media outlets</li>
-                <li>Category-specific rankings and trends</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">How It Works</h2>
-              <p>
-                Our AI-powered platform automatically tracks and analyzes media performance
-                across major outlets like Forbes, NYT, Bloomberg, and more. We provide
-                transparent, real-time data to help you make informed decisions about
-                media engagement and content strategy.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">For Media Outlets</h2>
-              <p>
-                Media houses get free exposure and credibility rankings, helping them
-                showcase their impact and reach to potential advertisers and readers.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">For Businesses</h2>
-              <p>
-                Make data-driven decisions about media partnerships and PR strategies
-                with our comprehensive analytics and real-time performance tracking.
-              </p>
-            </section>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* Hero Section */}
+      <div className="bg-blue-600 text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">About Media Leaderboard</h1>
+            <p className="text-xl text-blue-100">
+              Transforming media analytics with AI-powered insights
+            </p>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto">
+          {/* Introduction */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
+            <p className="text-lg text-gray-700 leading-relaxed">
+              Media Leaderboard is an AI-powered platform that helps you track and analyze the performance of media outlets in real-time. Our platform provides comprehensive insights into social media engagement, reach, and growth metrics.
+            </p>
+          </div>
+
+          {/* Mission Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <div className="bg-white rounded-2xl shadow-lg p-8 transform hover:scale-105 transition-transform duration-300">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Mission</h2>
+              <p className="text-gray-600">
+                We aim to provide accurate, real-time data and insights to help media professionals, researchers, and enthusiasts understand the digital media landscape better.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Vision</h2>
+              <p className="text-gray-600">
+                To become the leading platform for media analytics, setting new standards in data accuracy and real-time insights.
+              </p>
+            </div>
+          </div>
+
+          {/* Features Section */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Features</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  title: "Real-time Tracking",
+                  description: "Monitor performance metrics as they happen",
+                  icon: "📊"
+                },
+                {
+                  title: "AI Analytics",
+                  description: "Advanced algorithms for accurate insights",
+                  icon: "🤖"
+                },
+                {
+                  title: "Dashboard",
+                  description: "Comprehensive metrics visualization",
+                  icon: "📈"
+                },
+                {
+                  title: "Category Analysis",
+                  description: "Segment data by media categories",
+                  icon: "🏷️"
+                },
+                {
+                  title: "Historical Data",
+                  description: "Compare performance over time",
+                  icon: "📅"
+                },
+                {
+                  title: "Custom Reports",
+                  description: "Generate tailored analytics reports",
+                  icon: "📄"
+                }
+              ].map((feature, index) => (
+                <div key={index} className="bg-gray-50 rounded-xl p-6 hover:bg-blue-50 transition-colors duration-300">
+                  <div className="text-4xl mb-4">{feature.icon}</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* How It Works Section */}
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">How It Works</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  step: "1",
+                  title: "Data Collection",
+                  description: "We gather real-time data from various sources"
+                },
+                {
+                  step: "2",
+                  title: "Analysis",
+                  description: "AI-powered analysis of performance metrics"
+                },
+                {
+                  step: "3",
+                  title: "Insights",
+                  description: "Get actionable insights and rankings"
+                }
+              ].map((item, index) => (
+                <div key={index} className="text-center">
+                  <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                    {item.step}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-gray-600">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
