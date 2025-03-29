@@ -38,7 +38,7 @@ A modern web application that tracks and analyzes media outlet performance in re
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/media-leaderboard.git
+git clone https://github.com/ramsaloke/Big-Media-AI-Powered-Leaderboard.git
 cd media-leaderboard
 ```
 
@@ -111,6 +111,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter) - email@example.com
+Your Name - ram saloke - email@ramsaloke44@gmail.com
 
-Project Link: [https://github.com/yourusername/media-leaderboard](https://github.com/yourusername/media-leaderboard)
+Project Link: (https://github.com/ramsaloke/Big-Media-AI-Powered-Leaderboard.git)
